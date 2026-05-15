@@ -14,25 +14,11 @@ const XIconSocial = ({ size = 20 }: { size?: number }) => (
 );
 import TransitMap from './components/TransitMap';
 import TimetableModal from './components/TimetableModal';
+import ReloadPrompt from './components/ReloadPrompt';
 import { useTransitData } from './hooks/useTransitData';
 import { useAppConfig } from './hooks/useAppConfig';
 import { useTransitAds } from './hooks/useTransitAds';
 import './index.css';
-
-function useWindowWidth() {
-  const [width, setWidth] = useState(window.innerWidth);
-  useEffect(() => {
-    const handler = () => setWidth(window.innerWidth);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-  return width;
-}
-
-function useIsMobile() {
-  const width = useWindowWidth();
-  return width < 768;
-}
 
 const CAROUSEL_BANNERS = [
   [
@@ -222,10 +208,7 @@ function App() {
   const [bannerStates, setBannerStates] = useState([0, 0]);
   const [expandedBanner, setExpandedBanner] = useState<{slot: number, banner: number} | null>(null);
   const [infoModal, setInfoModal] = useState<'privacy' | 'terms' | 'pricing' | 'advertising_prices' | null>(null);
-  const isMobile = useIsMobile();
-  const windowWidth = useWindowWidth();
-  const isTablet = windowWidth >= 768 && windowWidth < 1150;
-  const dropdownRef = useRef<HTMLDivElement>(null);
+        const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -523,7 +506,7 @@ function App() {
             key={route.id}
             onClick={() => toggleRoute(route.id)}
             style={{
-              width: '100%', padding: isMobile ? '12px 14px' : '14px 16px', marginBottom: '6px',
+              width: '100%', padding: '12px 14px', marginBottom: '6px',
               background: isSelected ? `${route.color}15` : 'var(--bg-card)',
               border: `1px solid ${isSelected ? `${route.color}40` : 'var(--border)'}`,
               borderRadius: 'var(--radius-md)',
@@ -704,8 +687,8 @@ function App() {
   );
 
   // ========== MOBILE LAYOUT ==========
-  if (isMobile) {
-    return (
+  return (
+    <>
       <div style={{ position: 'relative', height: '100dvh', width: '100vw', overflow: 'hidden', background: 'var(--bg-primary)' }}>
         {/* Full-screen Map */}
         <div style={{ position: 'absolute', inset: '0 0 32px 0' }}>
@@ -879,13 +862,13 @@ function App() {
             </div>
 
             {/* Modal Content */}
-            <div style={{ overflowY: 'auto', paddingRight: '4px', flex: 1 }}>
+            <div style={{ overflowY: 'auto', paddingRight: '4px', flex: 1, paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
               {activeTab === 'recorridos' ? routeListContent : activeTab === 'informacion' ? infoContent : acercaDeContent}
             </div>
 
             {/* Footer */}
             <div style={{
-              padding: '12px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)',
+              padding: '12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               <span 
@@ -899,150 +882,6 @@ function App() {
           </div>
         </div>
       </div>
-    );
-  }
-
-  // ========== DESKTOP LAYOUT ==========
-  return (
-    <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-      
-      {/* Map Area - Full background */}
-      <div style={{ position: 'absolute', inset: '0 0 32px 0', zIndex: 1 }}>
-        <TransitMap selectedRouteIds={selectedRouteIds} routeStopsIda={routeStopsIda} routeStopsVuelta={routeStopsVuelta} routeShowIda={routeShowIda} routeShowVuelta={routeShowVuelta} routeSimIda={routeSimIda} routeSimVuelta={routeSimVuelta} transitRoutes={transitRoutes} transitStops={transitData?.stops || []} />
-        
-        {/* Espacios Publicitarios (2 Carruseles Arrastrables) */}
-        {config.banners_enabled && (
-          <div style={{ position: 'absolute', top: '16px', bottom: '110px', right: '16px', zIndex: 1000, width: isTablet ? '220px' : '300px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'space-evenly', pointerEvents: 'none', transition: 'width 0.3s' }}>
-            {[0, 1].map(slotIndex => (
-              <DraggableBannerCarousel 
-                key={slotIndex}
-                slotIndex={slotIndex}
-                activeBanner={bannerStates[slotIndex]}
-                banners={dynamicBanners[slotIndex] || []}
-                onBannerChange={(newIdx) => {
-                  setBannerStates(prev => {
-                    const next = [...prev];
-                    next[slotIndex] = newIdx;
-                    return next;
-                  });
-                }}
-                onBannerDoubleClick={(bannerIdx) => setExpandedBanner({ slot: slotIndex, banner: bannerIdx })}
-              />
-            ))}
-          </div>
-        )}
-
-
-        <div style={{ position: 'absolute', bottom: '36px', right: '16px', zIndex: 1000, pointerEvents: 'auto', opacity: 0.6, fontFamily: 'Inter, sans-serif', color: '#1e293b', textShadow: '0 0 12px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,1)', userSelect: 'none', WebkitUserSelect: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.8 }}>
-            {config.publicite_enabled && (
-              <a href={config.publicite_url || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.15rem', fontWeight: 900, color: '#16a34a', marginRight: '8px', cursor: 'pointer', textDecoration: 'underline', textShadow: '0 0 12px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,1)' }}>Publicite aquí</a>
-            )}
-            <a href="#" style={{ color: 'inherit' }}><InstagramIcon size={20} /></a>
-            <a href="#" style={{ color: 'inherit' }}><FacebookIcon size={20} /></a>
-            <a href="#" style={{ color: 'inherit' }}><XIconSocial size={20} /></a>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Sidebar Container */}
-      <div style={{
-        position: 'absolute',
-        top: '16px', left: '16px', bottom: '48px',
-        width: sidebarOpen ? (isTablet ? '320px' : '380px') : '0px',
-        zIndex: 10,
-        background: 'var(--bg-card)',
-        borderRadius: '24px',
-        border: '3px solid var(--success)',
-        boxShadow: 'var(--shadow-lg)',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        overflow: 'hidden',
-        pointerEvents: sidebarOpen ? 'auto' : 'none',
-        opacity: sidebarOpen ? 1 : 0,
-        userSelect: 'none',
-        WebkitUserSelect: 'none'
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: '24px 20px',
-          borderBottom: '1px solid var(--border)',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.05))'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-            <img src="/bus-icon.png" alt="Logo" style={{ width: '80px', height: '80px', borderRadius: '10px', objectFit: 'contain' }} draggable={false} />
-            <div>
-              <h1 style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                ¿Por dónde viene?
-              </h1>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '2px 0 0', fontWeight: 500 }}>Tu app de transportes</p>
-            </div>
-          </div>
-          
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px',
-            padding: '6px 10px', background: 'var(--success-glow)', borderRadius: 'var(--radius-sm)',
-            width: 'fit-content'
-          }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {availableLines.length} {availableLines.length === 1 ? 'LÍNEA ACTIVA' : 'LÍNEAS ACTIVAS'}
-            </span>
-          </div>
-        </div>
-
-        {/* Sidebar Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
-          <button 
-            onClick={() => setActiveTab('recorridos')}
-            style={{ flex: 1, padding: '12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'recorridos' ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === 'recorridos' ? 'var(--accent)' : 'var(--text-muted)', fontWeight: activeTab === 'recorridos' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem', outline: 'none' }}
-          >Recorridos</button>
-          <button 
-            onClick={() => setActiveTab('informacion')}
-            style={{ flex: 1, padding: '12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'informacion' ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === 'informacion' ? 'var(--accent)' : 'var(--text-muted)', fontWeight: activeTab === 'informacion' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem', outline: 'none' }}
-          >Información</button>
-        </div>
-
-        {/* Route List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-          {activeTab === 'recorridos' ? routeListContent : activeTab === 'informacion' ? infoContent : acercaDeContent}
-        </div>
-
-        {/* Footer */}
-        <div style={{
-          padding: '16px 20px', borderTop: '1px solid var(--border)', background: 'var(--bg-secondary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <span 
-            onClick={() => setActiveTab('acerca_de')}
-            style={{ fontSize: '0.8rem', color: 'var(--accent)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
-          >
-            Acerca de
-          </span>
-        </div>
-      </div>
-
-      {/* Toggle sidebar button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        style={{
-          position: 'absolute', left: sidebarOpen ? '404px' : '16px',
-          top: '24px',
-          zIndex: 20, width: '40px', height: '40px',
-          background: '#ffffff', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-sm)',
-          cursor: 'pointer', color: 'var(--text-secondary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: 'var(--shadow-sm)'
-        }}
-        title={sidebarOpen ? "Ocultar panel" : "Mostrar panel"}
-      >
-        <ChevronRight size={20} style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
-      </button>
-
-
       {/* Timetable Modal (Desktop) */}
       {viewingSchedule && <TimetableModal routeCode={viewingSchedule} onClose={() => setViewingSchedule(null)} />}
       
@@ -1101,8 +940,7 @@ function App() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontWeight: 800, color: '#f3f4f6' }}>¿Por dónde viene?</span>
-          {!isMobile && <span style={{ opacity: 0.8 }}>Tu app de transportes.</span>}
-          <span style={{ opacity: 0.7, fontWeight: 500, marginLeft: isMobile ? '6px' : '0' }}>v1.0.0 [local]</span>
+          <span style={{ opacity: 0.7, fontWeight: 500, marginLeft: '6px' }}>v1.0.0 [local]</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span>© 2026 CollieTech. Todos los derechos reservados.</span>
@@ -1327,7 +1165,9 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+      
+      <ReloadPrompt />
+    </>
   );
 }
 
